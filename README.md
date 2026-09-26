@@ -1,8 +1,8 @@
-# IRFMI – Lagførers minimumsordre v2.4
+# IRFMI – Lagførers minimumsordre v2.5
 
 Statisk GitHub Pages-app for milsim. Lim inn en full 5-punktsordre på engelsk, velg 1-Papa, 2-Papa, 3-Papa eller 4-Papa, og få en kort norsk IRFMI/minimumsordre.
 
-## Nytt i v2.4
+## Nytt i v2.5
 
 - Knappen heter nå **Generer IRFMI**.
 - Sterkere filtrering som vurderer sammenheng, ikke bare enkeltord.
@@ -17,8 +17,14 @@ Statisk GitHub Pages-app for milsim. Lim inn en full 5-punktsordre på engelsk, 
 - Fallback-logikk dersom et punkt ikke er tydelig formulert som egen ordrelinje.
 - Valgfri full EN → NO-oversettelse av de utvalgte linjene.
 
-- 
-
 ## GitHub Pages
 
 Last opp `index.html`, `style.css`, `app.js` og `README.md` i roten av repositoryet.
+
+
+## Nytt i v2.5
+- Maks 3 linjer per IRFMI-punkt.
+- Lange fiendebeskrivelser fjernes eller kortes kraftig ned.
+- Informasjon som ikke påvirker valgt lag prioriteres bort.
+- Metode og iverksettelse bruker korte kommandoord som Fremrykk, Følg, Rydd, Sikre, Bryt inn, Hold og Meld.
+- Egen DIREKTE OPPGAVE-boks er fjernet; oppgaven flettes inn i M – Metode for mindre opplesning.

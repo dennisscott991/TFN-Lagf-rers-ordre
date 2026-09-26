@@ -170,48 +170,97 @@ function buildRawIRFMI(s, keys){
   const c={}; for(const k of Object.keys(s)) c[k]=classify(s[k],keys);
   const direct=ownTasks(c,keys);
 
-  // I – Innledning: kort fiendebilde + oppdrag/hensikt for eget lag.
-  let intro=uniq([
-    ...pick(c.situation,x=>x.score.own + x.score.threat + (x.score.place?1:0),4,2),
-    ...pick(c.mission,x=>x.score.own*2 + x.score.mission + x.score.orderword + x.score.place,3,3)
-  ]).slice(0,6);
-  if(!intro.length) intro=uniq([...s.mission,...s.situation].map(normalize)).slice(0,4);
+  // I – Innledning: eget oppdrag først. Kun ett kort fiendepunkt hvis det påvirker laget direkte.
+  const ownMission=pick(c.mission,x=>x.score.own*3 + x.score.mission*2 + x.score.orderword + x.score.place,2,6);
+  const relevantThreat=pick(c.situation,x=>x.score.threat*2 + x.score.place*2 + x.score.direction - (x.line.length>220?2:0),1,5);
+  let intro=uniq([...ownMission,...relevantThreat]).slice(0,3);
+  if(!intro.length) intro=direct.slice(0,2);
 
-  // R – Retning: prioriter eget lag, fra/til/via, OBJ/PL/RP og retningsord.
+  // R – Retning: bare rute/akse/retning som berører valgt lag.
   let direction=uniq([
-    ...pick(c.execution,x=>x.score.own*2 + x.score.direction*3 + x.score.place*2 + x.score.orderword,7,4),
-    ...pick(c.mission,x=>x.score.own*2 + x.score.direction*2 + x.score.place*2,3,3),
-    ...pick(c.situation,x=>x.score.own + x.score.direction*2 + x.score.place,3,3)
-  ]).slice(0,7);
-  if(!direction.length){
-    direction=uniq([...nearbyContext(s.execution,keys),...nearbyContext(s.mission,keys)]).filter(x=>rx.direction.test(x)).slice(0,6);
-  }
+    ...pick(c.execution,x=>x.score.own*3 + x.score.direction*4 + x.score.place*2 + x.score.orderword,3,8),
+    ...pick(c.mission,x=>x.score.own*3 + x.score.direction*3 + x.score.place*2,2,7)
+  ]).slice(0,3);
 
-  // F – Formasjon/gruppering: rekkefølge, hvem foran/bak, støtte/angrep/sikring og lagkombinasjoner.
+  // F – Formasjon/gruppering: bare rekkefølge og forhold mellom egne elementer.
   let formation=uniq([
-    ...pick(c.execution,x=>x.score.own + x.score.formation*4 + x.score.unit*2 + x.score.orderword,7,4),
-    ...pick(c.mission,x=>x.score.own + x.score.formation*3 + x.score.unit*2,3,3)
-  ]).slice(0,7);
-  if(!formation.length){
-    formation=uniq(nearbyContext(s.execution,keys)).filter(x=>rx.formation.test(x) || /\b[1-4]\s*[-/]?\s*PAPA\b/i.test(x)).slice(0,6);
-  }
+    ...pick(c.execution,x=>x.score.own*2 + x.score.formation*5 + x.score.unit*3 + x.score.orderword,3,7),
+    ...pick(c.mission,x=>x.score.own + x.score.formation*4 + x.score.unit*3,2,6)
+  ]).slice(0,3);
 
-  // M – Metode: direkte oppgaver først, deretter handlinger i execution.
+  // M – Metode: direkte oppgaver til laget prioriteres hardt. Maks tre handlinger.
   let method=uniq([
     ...direct,
-    ...pick(c.execution,x=>x.score.own*2 + x.score.method*3 + x.score.orderword + x.score.place,10,4),
-    ...pick(c.mission,x=>x.score.own*2 + x.score.mission*2 + x.score.orderword,4,4)
-  ]).slice(0,12);
-  if(!method.length) method=uniq([...s.mission,...s.execution].map(normalize)).slice(0,8);
+    ...pick(c.execution,x=>x.score.own*4 + x.score.method*4 + x.score.orderword + x.score.place,6,8),
+    ...pick(c.mission,x=>x.score.own*4 + x.score.mission*3 + x.score.orderword,3,8)
+  ]).slice(0,3);
 
-  // I – Innbrudd/ild/iverksettelse: eksplisitte triggere, ROE, breach, tid, samband.
+  // I – Innbrudd/ild/iverksettelse: bare konkrete triggere, ROE, innbrudd, tid og meldinger.
   let final=uniq([
-    ...pick(c.execution,x=>x.score.own + x.score.final*4 + x.score.orderword + x.score.place,8,4),
-    ...pick(c.command,x=>x.score.own + x.score.final*4 + x.score.orderword,6,3)
-  ]).slice(0,9);
-  if(!final.length) final=uniq([...s.command,...s.execution].map(normalize)).filter(x=>rx.final.test(x)).slice(0,7);
+    ...pick(c.execution,x=>x.score.own*2 + x.score.final*5 + x.score.orderword + x.score.place,4,7),
+    ...pick(c.command,x=>x.score.own + x.score.final*5 + x.score.orderword,4,6)
+  ]).slice(0,3);
 
-  return {direct,intro,direction,formation,method,final};
+  return {direct:direct.slice(0,3),intro,direction,formation,method,final};
+}
+
+const commandMap = [
+  [/\b(?:skal\s+)?fremrykke\b/gi,'Fremrykk'],
+  [/\b(?:skal\s+)?rykke frem\b/gi,'Rykk frem'],
+  [/\b(?:skal\s+)?følge\b/gi,'Følg'],
+  [/\b(?:skal\s+)?rydde\b/gi,'Rydd'],
+  [/\b(?:skal\s+)?sikre\b/gi,'Sikre'],
+  [/\b(?:skal\s+)?bryte inn\b/gi,'Bryt inn'],
+  [/\b(?:skal\s+)?angripe\b/gi,'Angrip'],
+  [/\b(?:skal\s+)?bekjempe\b/gi,'Bekjemp'],
+  [/\b(?:skal\s+)?støtte\b/gi,'Støtt'],
+  [/\b(?:skal\s+)?holde\b/gi,'Hold'],
+  [/\b(?:skal\s+)?etablere\b/gi,'Etabler'],
+  [/\b(?:skal\s+)?melde\b/gi,'Meld'],
+  [/\b(?:skal\s+)?blokkere\b/gi,'Blokker'],
+  [/\b(?:skal\s+)?forsvare\b/gi,'Forsvar'],
+  [/\b(?:skal\s+)?ta\b/gi,'Ta']
+];
+
+function compactLine(line, type, unit){
+  let x=normalize(line)
+    .replace(new RegExp(`^${unit.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&')}\\s*[:\\-–—]?\\s*`,'i'),'')
+    .replace(/^P\d+\s*:\s*/i,'')
+    .replace(/^T\d+\s*:\s*/i,'')
+    .replace(/\b(?:I assess|I believe|we assess|it is assessed that)\b[^,.]*[,.:]?\s*/gi,'')
+    .replace(/\b(?:in order to|so that)\b.*$/i,'')
+    .replace(/\b(?:likely|possibly|probably|may|might)\b/gi,'')
+    .replace(/\s+/g,' ').trim();
+
+  // Fjern lange fiendebeskrivelser; behold bare hva/hvor.
+  if(type==='intro' && /fiend|enemy|hostile|opfor/i.test(x)){
+    x=x.replace(/\b(?:with|med)\b.*$/i,'').replace(/\b(?:which|who|som)\b.*$/i,'').trim();
+  }
+
+  // Gjør handlingslinjer mer muntlige og kommandoorienterte.
+  if(type==='method' || type==='final'){
+    for(const [r,repl] of commandMap) x=x.replace(r,repl);
+    x=x.replace(/\b(?:laget|troppen|elementet)\s+(?:skal\s+)?/gi,'');
+  }
+
+  // Kort ned fyllord.
+  x=x.replace(/\b(?:deretter|etter dette|subsequently|then)\b[:,]?\s*/gi,'')
+     .replace(/\b(?:for å kunne|med hensikt å)\b.*$/i,'')
+     .replace(/\s+([,.;:])/g,'$1')
+     .replace(/\.{2,}/g,'.')
+     .trim();
+
+  // Ikke la én opplesningslinje bli et helt avsnitt.
+  if(x.length>130){
+    const cut=x.slice(0,130);
+    const pos=Math.max(cut.lastIndexOf('. '),cut.lastIndexOf('; '),cut.lastIndexOf(', '));
+    x=(pos>70?cut.slice(0,pos):cut).trim().replace(/[,:;.-]+$/,'')+'…';
+  }
+  return x;
+}
+
+function compactItems(items,type,unit){
+  return uniq(items.map(x=>compactLine(x,type,unit)).filter(Boolean)).slice(0,3);
 }
 
 function esc(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
@@ -224,19 +273,24 @@ async function generate(){
   try{
     const s=parseSections(text),keys=keywordSet(),unit=currentUnit();
     const raw=buildRawIRFMI(s,keys);
-    const [task,intro,direction,formation,method,final]=await Promise.all([
+    const [taskT,introT,directionT,formationT,methodT,finalT]=await Promise.all([
       translateItems(raw.direct),translateItems(raw.intro),translateItems(raw.direction),translateItems(raw.formation),translateItems(raw.method),translateItems(raw.final)
     ]);
+    const task=compactItems(taskT,'method',unit);
+    const intro=compactItems(introT,'intro',unit);
+    const direction=compactItems(directionT,'direction',unit);
+    const formation=compactItems(formationT,'formation',unit);
+    const method=compactItems(methodT,'method',unit);
+    const final=compactItems(finalT,'final',unit);
 
     result.classList.remove('empty');
-    result.innerHTML=`<div class="order-title"><h3>${esc(unit)} – IRFMI</h3><p>Lagførers minimumsordre • filtrert fra engelsk 5-punktsordre • norsk kortversjon</p></div>
-      ${task.length?`<section class="order-section critical"><h4>DIREKTE OPPGAVE TIL ${esc(unit)}</h4><ul>${task.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></section>`:''}
+    result.innerHTML=`<div class="order-title"><h3>${esc(unit)} – IRFMI</h3><p>Kort muntlig minimumsordre • maks 3 linjer per punkt</p></div>
       ${block('I','Innledning',intro)}
       ${block('R','Retning',direction)}
       ${block('F','Formasjon / gruppering',formation)}
-      ${block('M','Metode / kort plan',method)}
+      ${block('M','Metode / kort plan',method.length?method:task)}
       ${block('I','Innbrudd • ildledelse • iverksettelse',final)}
-      <div class="warning"><strong>Kontroller mot originalordren før bruk.</strong> Automatisk filtrering og maskinoversettelse kan overse kontekst eller spesielle formuleringer.</div>`;
+      <div class="warning"><strong>Kontroller mot originalordren før bruk.</strong> Kortversjonen prioriterer handlinger som påvirker valgt lag.</div>`;
     status.textContent=fullTranslate.checked?`Ferdig – ${unit} er filtrert og oversatt til norsk.`:`Ferdig – ${unit} er filtrert med lokal terminologi.`;
   }catch(e){
     console.error(e); status.textContent='Kunne ikke behandle ordren. Prøv igjen.';
