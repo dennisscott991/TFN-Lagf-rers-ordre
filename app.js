@@ -234,8 +234,12 @@ function compactLine(line, type, unit){
 
   // Fjern lange fiendebeskrivelser; behold bare hva/hvor.
   if(type==='intro' && /fiend|enemy|hostile|opfor/i.test(x)){
-    x=x.replace(/\b(?:with|med)\b.*$/i,'').replace(/\b(?:which|who|som)\b.*$/i,'').trim();
+    x=x.replace(/(?:with|med).*$/i,'').replace(/(?:which|who|som).*$/i,'').trim();
+    x=x.replace(/(?:I believe|I assess|likely|probably|possibly|may|might)/gi,'').trim();
   }
+  if(type==='direction' && !/(OBJ|RP|PL|ORP|LD|LOA|north|south|east|west|nord|sør|øst|vest|through|via|mot|gjennom|fra)/i.test(x)) return '';
+  if(type==='formation' && !/(Papa|PAPA|lag|team|alpha|bravo|lead|follow|foran|bak|venstre|høyre|column|wedge|file|line|echelon|kolonne|kile)/i.test(x)) return '';
+  if(type==='final' && !/(ordre|order|PID|ROE|meld|report|signal|H-hour|NLT|innbrudd|breach|start|iverk|kanal|CH\s*\d+)/i.test(x)) return '';
 
   // Gjør handlingslinjer mer muntlige og kommandoorienterte.
   if(type==='method' || type==='final'){
@@ -251,8 +255,8 @@ function compactLine(line, type, unit){
      .trim();
 
   // Ikke la én opplesningslinje bli et helt avsnitt.
-  if(x.length>130){
-    const cut=x.slice(0,130);
+  if(x.length>95){
+    const cut=x.slice(0,95);
     const pos=Math.max(cut.lastIndexOf('. '),cut.lastIndexOf('; '),cut.lastIndexOf(', '));
     x=(pos>70?cut.slice(0,pos):cut).trim().replace(/[,:;.-]+$/,'')+'…';
   }
@@ -260,7 +264,8 @@ function compactLine(line, type, unit){
 }
 
 function compactItems(items,type,unit){
-  return uniq(items.map(x=>compactLine(x,type,unit)).filter(Boolean)).slice(0,3);
+  const limits={intro:2,direction:2,formation:2,method:3,final:2};
+  return uniq(items.map(x=>compactLine(x,type,unit)).filter(Boolean)).slice(0,limits[type]||3);
 }
 
 function esc(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
@@ -284,7 +289,7 @@ async function generate(){
     const final=compactItems(finalT,'final',unit);
 
     result.classList.remove('empty');
-    result.innerHTML=`<div class="order-title"><h3>${esc(unit)} – IRFMI</h3><p>Kort muntlig minimumsordre • maks 3 linjer per punkt</p></div>
+    result.innerHTML=`<div class="order-title"><h3>${esc(unit)} – IRFMI</h3><p>Kort muntlig minimumsordre</p></div>
       ${block('I','Innledning',intro)}
       ${block('R','Retning',direction)}
       ${block('F','Formasjon / gruppering',formation)}
