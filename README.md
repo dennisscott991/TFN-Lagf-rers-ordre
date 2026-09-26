@@ -17,6 +17,8 @@ Statisk GitHub Pages-app for milsim. Lim inn en full 5-punktsordre på engelsk, 
 - Fallback-logikk dersom et punkt ikke er tydelig formulert som egen ordrelinje.
 - Valgfri full EN → NO-oversettelse av de utvalgte linjene.
 
+- 
+
 ## GitHub Pages
 
 Last opp `index.html`, `style.css`, `app.js` og `README.md` i roten av repositoryet.
