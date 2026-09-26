@@ -1,52 +1,21 @@
-# IRFMI – Lagførers minimumsordre v2.8
+# IRFMI – Lagførers minimumsordre v2.9
 
-Statisk GitHub Pages-app for milsim. Lim inn en full 5-punktsordre på engelsk, velg 1-Papa, 2-Papa, 3-Papa eller 4-Papa, og få en kort norsk IRFMI/minimumsordre.
+Denne versjonen bruker helt nye filnavn for JavaScript og CSS for å unngå at GitHub Pages eller nettleseren serverer gammel kode fra cache.
 
-## Nytt i v2.8
-
-- Knappen heter nå **Generer IRFMI**.
-- Sterkere filtrering som vurderer sammenheng, ikke bare enkeltord.
-- Bedre gjenkjenning av kallesignalvarianter som `4-Papa`, `4 PAPA`, `PAPA 4` og `4P`.
-- Bedre uthenting fra både MISSION og EXECUTION.
-- Bedre IRFMI-fordeling for:
-  - I – Innledning
-  - R – Retning
-  - F – Formasjon / gruppering
-  - M – Metode / kort plan
-  - I – Innbrudd / ildledelse / iverksettelse
-- Fallback-logikk dersom et punkt ikke er tydelig formulert som egen ordrelinje.
-- Valgfri full EN → NO-oversettelse av de utvalgte linjene.
+## Viktig i v2.9
+- `app-v2.9.js` brukes i stedet for `app.js`.
+- `style-v2.9.css` brukes i stedet for `style.css`.
+- Ingen engelske originalsetninger kan vises som fallback.
+- Uforståelige linjer utelates i stedet for å vises på engelsk.
+- Støtte for AA = luftvern og AS = sjømålsvåpen / anti-surface.
+- Forstår kombinasjoner som `3/4 Papa` som relevante for både 3-Papa og 4-Papa.
+- Maks 1 linje Innledning, 1 Retning, 2 Formasjon, 3 Metode, 2 Iverksettelse.
 
 ## GitHub Pages
+Last opp alle fire filene i roten av repositoryet:
+- `index.html`
+- `app-v2.9.js`
+- `style-v2.9.css`
+- `README.md`
 
-Last opp `index.html`, `style.css`, `app.js` og `README.md` i roten av repositoryet.
-
-
-## Nytt i v2.8
-- Maks 3 linjer per IRFMI-punkt.
-- Lange fiendebeskrivelser fjernes eller kortes kraftig ned.
-- Informasjon som ikke påvirker valgt lag prioriteres bort.
-- Metode og iverksettelse bruker korte kommandoord som Fremrykk, Følg, Rydd, Sikre, Bryt inn, Hold og Meld.
-- Egen DIREKTE OPPGAVE-boks er fjernet; oppgaven flettes inn i M – Metode for mindre opplesning.
-
-
-## Nytt i v2.8
-- Cache-busting på app.js og style.css slik at GitHub Pages laster nyeste versjon.
-- Ingen egen 'Direkte oppgave'-boks.
-- Maks 2 linjer i Innledning, Retning, Formasjon og Iverksettelse; maks 3 i Metode.
-- Hver linje forkortes til ca. 95 tegn.
-- Strengere bortfiltrering av lange fiendebeskrivelser og informasjon som ikke påvirker valgt lag.
-
-
-## Nytt i v2.8
-- Ingen ord-for-ord-maskinoversettelse.
-- Omskriver engelske ordrelinjer til standardiserte norske kommandoer.
-- Hopper over lange fiendebeskrivelser og overordnet hensikt som ikke påvirker valgt lag.
-- Maks 2/2/2/3/2 korte linjer i IRFMI.
-
-
-## Forkortelser i v2.8
-- `AA` forstås som **Anti-Air / luftvern** og skrives som `luftvern (AA)`.
-- `AS` forstås som **Anti-Ship / Anti-Surface** og skrives som `sjømålsvåpen (AS)`.
-- Dersom en ordre sier f.eks. `destroy enemy AA and AS at OLD CASTLE`, kan IRFMI bli `Bekjemp luftvern (AA) og sjømålsvåpen (AS) ved OLD CASTLE`.
-- Engelske helsetninger brukes ikke som fallback i IRFMI.
+De gamle `app.js` og `style.css` kan gjerne slettes etterpå for å unngå forvirring.

@@ -8,78 +8,24 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>IRFMI – Lagførers minimumsordre</title>
-  <link rel="stylesheet" href="style.css?v=2.8" />
+  <link rel="stylesheet" href="style-v2.9.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div>
-      <p class="eyebrow">MILSIM ORDER TOOL</p>
-      <h1>IRFMI – Lagførers minimumsordre</h1>
-      <p class="subtitle">Lim inn hele 5-punktsordren på engelsk. Appen filtrerer ut bare det som påvirker laget ditt og lager en svært kort norsk minimumsordre.</p>
-    </div>
-    <button id="themeBtn" class="ghost" type="button" aria-label="Bytt tema">☀︎ / ☾</button>
-  </header>
-
+  <header class="topbar"><div><p class="eyebrow">MILSIM ORDER TOOL</p><h1>IRFMI – Lagførers minimumsordre</h1><p class="subtitle">Lim inn hele 5-punktsordren på engelsk. Appen viser kun korte norske kommandoer som påvirker laget ditt.</p></div><button id="themeBtn" class="ghost" type="button">☀︎ / ☾</button></header>
   <main class="grid">
     <section class="panel input-panel">
-      <div class="panel-head">
-        <div><span class="step">1</span><h2>Full ordre</h2></div>
-        <button id="exampleBtn" class="ghost small" type="button">Eksempel</button>
-      </div>
-
+      <div class="panel-head"><div><span class="step">1</span><h2>Full ordre</h2></div><button id="exampleBtn" class="ghost small" type="button">Eksempel</button></div>
       <label for="unitName">Velg lag / kallesignal</label>
-      <select id="unitName">
-        <option value="1-Papa">1-Papa</option>
-        <option value="2-Papa">2-Papa</option>
-        <option value="3-Papa">3-Papa</option>
-        <option value="4-Papa" selected>4-Papa</option>
-        <option value="custom">Annet kallesignal…</option>
-      </select>
-
-      <div id="customWrap" class="hidden">
-        <label for="customUnit">Eget lag / kallesignal</label>
-        <input id="customUnit" type="text" placeholder="F.eks. 2-Papa, Ghost 1, Alpha" />
-      </div>
-
-      <label for="roleKeywords">Andre navn appen skal kjenne igjen <span class="muted">(valgfritt)</span></label>
-      <input id="roleKeywords" type="text" placeholder="F.eks. Papa 4, PAPA-4, 4P, Fourth Squad" />
-
-      <label for="orderInput">Lim inn full 5-punktsordre <span class="lang-badge">EN → NO</span></label>
-      <textarea id="orderInput" spellcheck="false" placeholder="1. SITUATION\n...\n\n2. MISSION\n...\n\n3. EXECUTION\n...\n\n4. SUSTAINMENT\n...\n\n5. COMMAND & SIGNAL\n..."></textarea>
-
-      <label style="display:flex;gap:.65rem;align-items:flex-start;margin-top:1rem;cursor:pointer">
-        <input id="fullTranslate" type="checkbox" checked style="width:auto;margin-top:.2rem" />
-        <span><strong>Kort norsk ordreform</strong><br><span class="muted">Omskriver automatisk utvalgte ordrelinjer til korte norske lagførerkommandoer. Ingen ekstern oversettelsestjeneste brukes.</span></span>
-      </label>
-
-      <div class="actions">
-        <button id="generateBtn" class="primary" type="button">Generer IRFMI</button>
-        <button id="clearBtn" class="secondary" type="button">Tøm</button>
-      </div>
-
-      <div class="hint"><strong>Hva appen gjør:</strong> prioriterer direkte oppgaver til valgt lag, fjerner lange fiendebeskrivelser og holder hvert IRFMI-punkt til maks 3 svært korte linjer. Kallesignal, OBJ/RP/PL, tall og klokkeslett forsøkes beholdt uendret.</div>
+      <select id="unitName"><option value="1-Papa">1-Papa</option><option value="2-Papa">2-Papa</option><option value="3-Papa">3-Papa</option><option value="4-Papa" selected>4-Papa</option><option value="custom">Annet kallesignal…</option></select>
+      <div id="customWrap" class="hidden"><label for="customUnit">Eget lag / kallesignal</label><input id="customUnit" type="text" placeholder="F.eks. Ghost 1" /></div>
+      <label for="roleKeywords">Andre navn appen skal kjenne igjen <span class="muted">(valgfritt)</span></label><input id="roleKeywords" type="text" placeholder="F.eks. Papa 4, 4PAPA" />
+      <label for="orderInput">Lim inn full 5-punktsordre <span class="lang-badge">EN → NO</span></label><textarea id="orderInput" spellcheck="false" placeholder="1. SITUATION\n...\n\n2. MISSION\n...\n\n3. EXECUTION\n...\n\n4. SUSTAINMENT\n...\n\n5. COMMAND & SIGNAL\n..."></textarea>
+      <div class="actions"><button id="generateBtn" class="primary" type="button">Generer IRFMI</button><button id="clearBtn" class="secondary" type="button">Tøm</button></div>
+      <div class="hint"><strong>v2.9:</strong> Ingen engelske originalsetninger brukes som fallback. Hvis en linje ikke kan tolkes til en kort norsk kommando, blir den utelatt.</div>
     </section>
-
-    <section class="panel output-panel">
-      <div class="panel-head">
-        <div><span class="step">2</span><h2>IRFMI</h2></div>
-        <div class="mini-actions">
-          <button id="copyBtn" class="ghost small" type="button">Kopier IRFMI</button>
-          <button id="printBtn" class="ghost small" type="button">Skriv ut</button>
-        </div>
-      </div>
-
-      <div id="status" class="status">Klar for ordre.</div>
-      <article id="result" class="order-card empty">
-        <div class="placeholder"><div class="crosshair">◎</div><p>IRFMI vises her.</p></div>
-      </article>
-    </section>
+    <section class="panel output-panel"><div class="panel-head"><div><span class="step">2</span><h2>IRFMI</h2></div><div class="mini-actions"><button id="copyBtn" class="ghost small" type="button">Kopier IRFMI</button><button id="printBtn" class="ghost small" type="button">Skriv ut</button></div></div><div id="status" class="status">Klar for ordre.</div><article id="result" class="order-card empty"><div class="placeholder"><div class="crosshair">◎</div><p>IRFMI vises her.</p></div></article></section>
   </main>
-
-  <footer>
-    <span>Lokal filtrering. Full oversettelse bruker ekstern oversettelsestjeneste når valget er aktivert.</span>
-    <span>v2.8</span>
-  </footer>
-  <script src="app.js?v=2.8"></script>
+  <footer><span>Streng lokal omskriving til korte norske lagførerkommandoer.</span><span>v2.9</span></footer>
+  <script src="app-v2.9.js"></script>
 </body>
 </html>
