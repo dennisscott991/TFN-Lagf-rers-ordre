@@ -67,205 +67,154 @@ function canon(s){ return s.toLowerCase().replace(/[–—]/g,'-').replace(/[^a-
 function mentions(line,keys){ const l=canon(line); return keys.some(k=>{ const kk=canon(k); return kk && (l.includes(kk) || l.replace(/\s/g,'').includes(kk.replace(/\s/g,''))); }); }
 function uniq(a){ const seen=new Set(); return a.filter(x=>{const k=canon(x);if(!k||seen.has(k))return false;seen.add(k);return true;}); }
 
-// Lokal fallback for vanlige militære uttrykk.
-const phrases = [
-  [/commander'?s intent/gi,'sjefens intensjon'],[/enemy forces?/gi,'fiendtlige styrker'],[/friendly forces?/gi,'egne styrker'],
-  [/support by fire/gi,'støtte med ild'],[/supporting fire/gi,'støtteild'],[/seize(?:s|d)?/gi,'ta'],[/secure(?:s|d)?/gi,'sikre'],[/clear(?:s|ed|ing)?/gi,'rydde'],
-  [/defend(?:s|ed|ing)?/gi,'forsvare'],[/assault(?:s|ed|ing)?/gi,'angripe'],[/breach(?:es|ed|ing)?/gi,'bryte inn'],
-  [/destroy(?:s|ed|ing)?/gi,'bekjempe'],[/move(?:s|d|ing)?/gi,'fremrykke'],[/advance(?:s|d|ing)?/gi,'rykke frem'],[/withdraw(?:s|n|ing)?/gi,'trekke ut'],
-  [/follow(?:s|ed|ing)?/gi,'følge'],[/establish(?:es|ed|ing)?/gi,'etablere'],[/hold(?:s|ing)?/gi,'holde'],[/block(?:s|ed|ing)?/gi,'blokkere'],
-  [/report(?:s|ed|ing)?/gi,'melde'],[/do not/gi,'ikke'],[/no later than/gi,'senest'],[/NLT\b/gi,'senest'],
-  [/platoon net/gi,'troppsnett'],[/squad internal/gi,'internt lagsnett'],[/callsign/gi,'kallesignal'],[/succession/gi,'rekkefølge ved bortfall'],
-  [/squad leader/gi,'lagfører'],[/team leader alpha/gi,'lagfører Alpha'],[/team leader bravo/gi,'lagfører Bravo'],
-  [/ammo resupply/gi,'ammunisjonsforsyning'],[/medical supplies/gi,'sanitetsmateriell'],[/civilian presence is possible/gi,'sivile kan være til stede'],
-  [/observation posts?/gi,'observasjonsposter'],[/light patrols?/gi,'lette patruljer'],[/from the north/gi,'fra nord'],[/from the south/gi,'fra sør'],
-  [/from the east/gi,'fra øst'],[/from the west/gi,'fra vest'],[/north of/gi,'nord for'],[/south of/gi,'sør for'],[/east of/gi,'øst for'],[/west of/gi,'vest for'],
-  [/east to west/gi,'øst mot vest'],[/west to east/gi,'vest mot øst'],[/north to south/gi,'nord mot sør'],[/south to north/gi,'sør mot nord'],
-  [/in order to/gi,'for å'],[/objective/gi,'objekt'],[/route/gi,'akse'],[/building/gi,'bygning'],[/compound/gi,'område'],[/platoon/gi,'tropp'],
-  [/squad/gi,'lag'],[/radio/gi,'samband'],[/channel/gi,'kanal'],[/frequency/gi,'frekvens'],[/rules? of engagement/gi,'engasjementsregler'],
-  [/PID required/gi,'positiv identifikasjon kreves'],[/360 security/gi,'360° sikring'],[/rally point/gi,'samlepunkt'],[/phase line/gi,'faselinje'],
-  [/maneuver/gi,'manøver'],[/ready to/gi,'klar til å'],[/old castle/gi,'OLD CASTLE']
-];
-function localTranslate(line){ let out=line; for(const [r,repl] of phrases) out=out.replace(r,repl); return out.replace(/\s+/g,' ').trim(); }
-
-function protectTokens(text){
-  const tokens=[];
-  const pattern=/\b(?:\d+-Papa|PAPA[- ]?\d|\d+\/?\d*\s*PAPA|OBJ\s*[A-Z0-9-]+|RP\s*[A-Z0-9-]+|PL\s*[A-Z0-9-]+|ORP\s*[A-Z0-9-]+|LOA|LD|CCP|CASEVAC|MEDEVAC|ROE|PID|SBF|NLT|H[- ]?HOUR|CH\s*\d+|M\d{2,4}|\d{3,4}|\d{6,10})\b/gi;
-  const protectedText=text.replace(pattern,m=>{const i=tokens.push(m)-1;return `ZZTOKEN${i}ZZ`;});
-  return {protectedText,tokens};
-}
-function restoreTokens(text,tokens){ return tokens.reduce((out,t,i)=>out.replace(new RegExp(`ZZTOKEN${i}ZZ`,'gi'),t),text); }
-
-async function onlineTranslate(text){
-  const clean=normalize(text); if(!clean) return clean;
-  const {protectedText,tokens}=protectTokens(clean);
-  try{
-    const url=`https://api.mymemory.translated.net/get?q=${encodeURIComponent(protectedText.slice(0,480))}&langpair=en|no`;
-    const r=await fetch(url,{headers:{'Accept':'application/json'}});
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    const data=await r.json();
-    let translated=data?.responseData?.translatedText;
-    if(!translated || typeof translated!=='string') throw new Error('Tomt oversettelsessvar');
-    translated=restoreTokens(translated,tokens);
-    return translated.replace(/&quot;/g,'"').replace(/&#39;/g,"'").trim();
-  }catch(e){ return localTranslate(clean); }
-}
-
-async function translateItems(items){
-  if(!fullTranslate.checked) return items.map(localTranslate);
-  const out=[];
-  for(const item of items) out.push(await onlineTranslate(item));
-  return out;
-}
-
-const rx={
-  threat:/\b(enemy|hostile|opfor|threat|reserve|armor|armour|obstacle|mine|ied|patrol|observation|defend|occupy|reinforce|counter ?attack|strongpoint|bunker|position)\b/i,
-  direction:/\b(north|south|east|west|northeast|northwest|southeast|southwest|left|right|front|rear|from|toward|towards|onto|through|via|route|axis|approach|direction|avenue|corridor|PL\s+\w+|RP\s+\w+|OBJ\s+\w+|ORP\s+\w+)\b/i,
-  formation:/\b(formation|column|wedge|file|staggered|echelon|line|order of march|lead|leading|follow|follows|behind|front|rear|left|right|support element|assault element|security element|reserve|first|second|third|fourth|1[- ]?papa|2[- ]?papa|3[- ]?papa|4[- ]?papa|3\/4\s*papa|1\/2\s*papa)\b/i,
-  method:/\b(move|maneuver|manoeuvre|advance|clear|secure|seize|assault|breach|support by fire|sbf|block|screen|defend|hold|occupy|establish|report|follow|isolate|destroy|attack|support|fix|suppress|push|break through|bound|cross|capture|take|phase|task|purpose|intent|ready to)\b/i,
-  final:/\b(breach|entry|entrance|door|gate|fire|roe|pid|initiate|execute|step[- ]?off|h[- ]?hour|signal|on order|when|nlt|time|channel|radio|report|trigger|commence|codeword|code word|go on|start on)\b/i,
-  missionVerb:/\b(clear|secure|seize|assault|attack|defend|hold|support|screen|block|destroy|occupy|capture|take|breach|move|maneuver|manoeuvre|follow)\b/i
-};
-
-function classify(lines, keys){
-  return lines.map((raw,idx)=>{
-    const line=normalize(raw); const own=mentions(line,keys);
-    const score = {
-      own: own ? 10 : 0,
-      threat: rx.threat.test(line) ? 3 : 0,
-      direction: rx.direction.test(line) ? 3 : 0,
-      formation: rx.formation.test(line) ? 3 : 0,
-      method: rx.method.test(line) ? 3 : 0,
-      final: rx.final.test(line) ? 3 : 0,
-      mission: rx.missionVerb.test(line) ? 3 : 0,
-      orderword: /\b(will|shall|must|is to|are to|tasked|on order|be prepared to|ready to)\b/i.test(line) ? 2 : 0,
-      place: /\b(?:OBJ|RP|PL|ORP|LD|LOA)\s*[A-Z0-9-]+\b/i.test(line) ? 2 : 0,
-      unit: /\b[1-4]\s*[-/]?\s*PAPA\b|\bPAPA\s*[1-4]\b/i.test(line) ? 2 : 0
-    };
-    return {line,idx,score};
-  }).filter(x=>x.line);
-}
-
-function pick(items, scoreFn, limit=6, min=1){
-  return uniq(items.map(x=>({...x,total:scoreFn(x)})).filter(x=>x.total>=min)
-    .sort((a,b)=>b.total-a.total||a.idx-b.idx).slice(0,limit).sort((a,b)=>a.idx-b.idx).map(x=>x.line));
-}
-
-function ownTasks(sectionObjects, keys){
-  const pool=[...sectionObjects.mission,...sectionObjects.execution,...sectionObjects.other];
-  return uniq(pool.filter(x=>x.score.own && (x.score.method || x.score.mission || x.score.orderword)).map(x=>x.line)).slice(0,8);
-}
-
-function nearbyContext(lines, keys){
-  const out=[];
-  for(let i=0;i<lines.length;i++){
-    if(mentions(lines[i],keys)){
-      for(const j of [i-1,i,i+1]) if(j>=0&&j<lines.length) out.push(normalize(lines[j]));
-    }
-  }
-  return uniq(out);
-}
-
-function buildRawIRFMI(s, keys){
-  const c={}; for(const k of Object.keys(s)) c[k]=classify(s[k],keys);
-  const direct=ownTasks(c,keys);
-
-  // I – Innledning: eget oppdrag først. Kun ett kort fiendepunkt hvis det påvirker laget direkte.
-  const ownMission=pick(c.mission,x=>x.score.own*3 + x.score.mission*2 + x.score.orderword + x.score.place,2,6);
-  const relevantThreat=pick(c.situation,x=>x.score.threat*2 + x.score.place*2 + x.score.direction - (x.line.length>220?2:0),1,5);
-  let intro=uniq([...ownMission,...relevantThreat]).slice(0,3);
-  if(!intro.length) intro=direct.slice(0,2);
-
-  // R – Retning: bare rute/akse/retning som berører valgt lag.
-  let direction=uniq([
-    ...pick(c.execution,x=>x.score.own*3 + x.score.direction*4 + x.score.place*2 + x.score.orderword,3,8),
-    ...pick(c.mission,x=>x.score.own*3 + x.score.direction*3 + x.score.place*2,2,7)
-  ]).slice(0,3);
-
-  // F – Formasjon/gruppering: bare rekkefølge og forhold mellom egne elementer.
-  let formation=uniq([
-    ...pick(c.execution,x=>x.score.own*2 + x.score.formation*5 + x.score.unit*3 + x.score.orderword,3,7),
-    ...pick(c.mission,x=>x.score.own + x.score.formation*4 + x.score.unit*3,2,6)
-  ]).slice(0,3);
-
-  // M – Metode: direkte oppgaver til laget prioriteres hardt. Maks tre handlinger.
-  let method=uniq([
-    ...direct,
-    ...pick(c.execution,x=>x.score.own*4 + x.score.method*4 + x.score.orderword + x.score.place,6,8),
-    ...pick(c.mission,x=>x.score.own*4 + x.score.mission*3 + x.score.orderword,3,8)
-  ]).slice(0,3);
-
-  // I – Innbrudd/ild/iverksettelse: bare konkrete triggere, ROE, innbrudd, tid og meldinger.
-  let final=uniq([
-    ...pick(c.execution,x=>x.score.own*2 + x.score.final*5 + x.score.orderword + x.score.place,4,7),
-    ...pick(c.command,x=>x.score.own + x.score.final*5 + x.score.orderword,4,6)
-  ]).slice(0,3);
-
-  return {direct:direct.slice(0,3),intro,direction,formation,method,final};
-}
-
-const commandMap = [
-  [/\b(?:skal\s+)?fremrykke\b/gi,'Fremrykk'],
-  [/\b(?:skal\s+)?rykke frem\b/gi,'Rykk frem'],
-  [/\b(?:skal\s+)?følge\b/gi,'Følg'],
-  [/\b(?:skal\s+)?rydde\b/gi,'Rydd'],
-  [/\b(?:skal\s+)?sikre\b/gi,'Sikre'],
-  [/\b(?:skal\s+)?bryte inn\b/gi,'Bryt inn'],
-  [/\b(?:skal\s+)?angripe\b/gi,'Angrip'],
-  [/\b(?:skal\s+)?bekjempe\b/gi,'Bekjemp'],
-  [/\b(?:skal\s+)?støtte\b/gi,'Støtt'],
-  [/\b(?:skal\s+)?holde\b/gi,'Hold'],
-  [/\b(?:skal\s+)?etablere\b/gi,'Etabler'],
-  [/\b(?:skal\s+)?melde\b/gi,'Meld'],
-  [/\b(?:skal\s+)?blokkere\b/gi,'Blokker'],
-  [/\b(?:skal\s+)?forsvare\b/gi,'Forsvar'],
-  [/\b(?:skal\s+)?ta\b/gi,'Ta']
-];
-
-function compactLine(line, type, unit){
-  let x=normalize(line)
-    .replace(new RegExp(`^${unit.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&')}\\s*[:\\-–—]?\\s*`,'i'),'')
+// v2.7: IRFMI skal ikke ord-for-ord-oversettes. Den omskrives til korte norske ordrelinjer.
+function cleanMilitary(line){
+  return normalize(line)
     .replace(/^P\d+\s*:\s*/i,'')
     .replace(/^T\d+\s*:\s*/i,'')
     .replace(/\b(?:I assess|I believe|we assess|it is assessed that)\b[^,.]*[,.:]?\s*/gi,'')
     .replace(/\b(?:in order to|so that)\b.*$/i,'')
-    .replace(/\b(?:likely|possibly|probably|may|might)\b/gi,'')
     .replace(/\s+/g,' ').trim();
-
-  // Fjern lange fiendebeskrivelser; behold bare hva/hvor.
-  if(type==='intro' && /fiend|enemy|hostile|opfor/i.test(x)){
-    x=x.replace(/(?:with|med).*$/i,'').replace(/(?:which|who|som).*$/i,'').trim();
-    x=x.replace(/(?:I believe|I assess|likely|probably|possibly|may|might)/gi,'').trim();
-  }
-  if(type==='direction' && !/(OBJ|RP|PL|ORP|LD|LOA|north|south|east|west|nord|sør|øst|vest|through|via|mot|gjennom|fra)/i.test(x)) return '';
-  if(type==='formation' && !/(Papa|PAPA|lag|team|alpha|bravo|lead|follow|foran|bak|venstre|høyre|column|wedge|file|line|echelon|kolonne|kile)/i.test(x)) return '';
-  if(type==='final' && !/(ordre|order|PID|ROE|meld|report|signal|H-hour|NLT|innbrudd|breach|start|iverk|kanal|CH\s*\d+)/i.test(x)) return '';
-
-  // Gjør handlingslinjer mer muntlige og kommandoorienterte.
-  if(type==='method' || type==='final'){
-    for(const [r,repl] of commandMap) x=x.replace(r,repl);
-    x=x.replace(/\b(?:laget|troppen|elementet)\s+(?:skal\s+)?/gi,'');
-  }
-
-  // Kort ned fyllord.
-  x=x.replace(/\b(?:deretter|etter dette|subsequently|then)\b[:,]?\s*/gi,'')
-     .replace(/\b(?:for å kunne|med hensikt å)\b.*$/i,'')
-     .replace(/\s+([,.;:])/g,'$1')
-     .replace(/\.{2,}/g,'.')
-     .trim();
-
-  // Ikke la én opplesningslinje bli et helt avsnitt.
-  if(x.length>95){
-    const cut=x.slice(0,95);
-    const pos=Math.max(cut.lastIndexOf('. '),cut.lastIndexOf('; '),cut.lastIndexOf(', '));
-    x=(pos>70?cut.slice(0,pos):cut).trim().replace(/[,:;.-]+$/,'')+'…';
-  }
-  return x;
 }
 
-function compactItems(items,type,unit){
-  const limits={intro:2,direction:2,formation:2,method:3,final:2};
-  return uniq(items.map(x=>compactLine(x,type,unit)).filter(Boolean)).slice(0,limits[type]||3);
+function noUnitPrefix(s, unit){
+  const aliases=[unit,unit.replace(/-/g,' '),unit.replace(/-/g,'')];
+  let x=s;
+  for(const a of aliases){
+    const r=new RegExp('^'+a.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&')+'\\s*[:\\-–—]?\\s*','i');
+    x=x.replace(r,'');
+  }
+  return x.trim();
+}
+
+function placeTokens(s){
+  return [...s.matchAll(/\b(?:OBJ|RP|PL|ORP|LD|LOA)\s*[A-Z0-9-]+\b|\bOLD CASTLE\b|\b[A-Z][A-Z0-9_-]{2,}\b/g)]
+    .map(m=>m[0]).filter((v,i,a)=>a.indexOf(v)===i);
+}
+
+function directionWords(s){
+  const out=[];
+  const map=[['north','nord'],['south','sør'],['east','øst'],['west','vest'],['left','venstre'],['right','høyre']];
+  for(const [e,n] of map) if(new RegExp('\\b'+e+'\\b','i').test(s)) out.push(n);
+  return out;
+}
+
+function canonicalCommand(line, unit){
+  let s=noUnitPrefix(cleanMilitary(line),unit);
+  const places=placeTokens(s);
+  const p=places.join(' → ');
+
+  const rules=[
+    [/\b(?:move|moves|moving|maneuver|manoeuvre|advance|push)\b/i,()=>`Fremrykk${p?' mot '+places[places.length-1]:''}`],
+    [/\b(?:follow|follows|following)\b/i,()=>{const m=s.match(/follow(?:s|ing)?\s+([^,.;]+)/i);return `Følg${m?' '+m[1].trim():''}`;}],
+    [/\b(?:breach|breaches|breaching|break through|bryte inn)\b/i,()=>`Bryt inn${places.length?' ved '+places[0]:''}`],
+    [/\b(?:clear|clears|clearing)\b/i,()=>`Rydd${places.length?' '+places[places.length-1]:''}`],
+    [/\b(?:secure|secures|securing)\b/i,()=>`Sikre${places.length?' '+places[places.length-1]:''}`],
+    [/\b(?:assault|attack|attacks|attacking)\b/i,()=>`Angrip${places.length?' '+places[places.length-1]:''}`],
+    [/\b(?:support by fire|sbf|supporting fire)\b/i,()=>`Støtt med ild${places.length?' mot '+places[places.length-1]:''}`],
+    [/\b(?:support|supports|supporting)\b/i,()=>`Støtt${places.length?' ved '+places[places.length-1]:''}`],
+    [/\b(?:hold|holds|holding)\b/i,()=>`Hold${places.length?' '+places[places.length-1]:''}`],
+    [/\b(?:defend|defends|defending)\b/i,()=>`Forsvar${places.length?' '+places[places.length-1]:''}`],
+    [/\b(?:destroy|destroys|destroying)\b/i,()=>`Bekjemp${places.length?' ved '+places[places.length-1]:''}`],
+    [/\b(?:report|reports|reporting)\b/i,()=>{const m=s.match(/report(?:s|ing)?\s+(.+)/i);return `Meld${m?' '+m[1].trim():''}`;}],
+    [/\b(?:establish|establishes|establishing)\b/i,()=>{if(/360/i.test(s))return 'Etabler 360° sikring';return `Etabler${places.length?' ved '+places[places.length-1]:''}`;}],
+    [/\b(?:block|blocks|blocking)\b/i,()=>`Blokker${places.length?' '+places[places.length-1]:''}`]
+  ];
+  for(const [r,f] of rules) if(r.test(s)) return f().replace(/\s+/g,' ').trim();
+  return '';
+}
+
+function introSummary(lines, unit){
+  // Kun informasjon som direkte påvirker valgt lag. Ingen lange fiendebeskrivelser.
+  for(const raw of lines){
+    const s=cleanMilitary(raw);
+    if(!mentions(s,keywordSet())) continue;
+    const cmd=canonicalCommand(s,unit);
+    if(cmd) return cmd;
+  }
+  return '';
+}
+
+function routeSummary(lines, unit){
+  for(const raw of lines){
+    const s=cleanMilitary(raw);
+    if(!mentions(s,keywordSet())) continue;
+    const places=placeTokens(s);
+    if(places.length>=2) return places.slice(0,3).join(' → ');
+    const d=directionWords(s);
+    if(places.length===1 && d.length) return `${d[0]} mot ${places[0]}`;
+  }
+  return '';
+}
+
+function formationSummary(lines, unit){
+  const all=lines.map(cleanMilitary);
+  for(const s of all){
+    if(!mentions(s,keywordSet())) continue;
+    let m=s.match(/\b([1-4](?:\s*[-/]?\s*Papa)?)\b[^.]{0,40}\b(?:lead|front|first)\b/i);
+    if(m) return `${m[1].replace(/\s+/g,' ')} foran`;
+    m=s.match(/\b(?:follow|follows|behind)\s+([1-4](?:\s*[-/]?\s*Papa)?)/i);
+    if(m) return `${unit} følger ${m[1].replace(/\s+/g,' ')}`;
+    if(/3\/4\s*papa/i.test(s) && /follow|support|ready/i.test(s)) return `${unit} følger 3-Papa`;
+    if(/1[- ]?papa.*2[- ]?papa.*front/i.test(s)) return `1-Papa / 2-Papa foran`;
+  }
+  return '';
+}
+
+function finalSummary(lines, unit){
+  for(const raw of lines){
+    const s=cleanMilitary(raw);
+    if(!mentions(s,keywordSet()) && !/platoon leader|PL\b|on order|PID|ROE|report|channel|CH\s*\d+/i.test(s)) continue;
+    if(/on order.*platoon leader|on order.*PL\b/i.test(s)) return 'Iverksett på ordre fra PL';
+    if(/PID required/i.test(s)) return 'PID kreves';
+    if(/report.*secure/i.test(s)) return 'Meld OBJ SECURE';
+    if(/\bCH\s*\d+\b/i.test(s)){ const m=s.match(/\bCH\s*\d+\b/i); return `Samband ${m[0]}`; }
+  }
+  return '';
+}
+
+function buildRawIRFMI(s, keys){
+  const relevant=[...s.mission,...s.execution,...s.command,...s.other];
+  const own=relevant.filter(x=>mentions(x,keys));
+  const context=[];
+  for(const arr of [s.execution,s.mission]){
+    for(let i=0;i<arr.length;i++) if(mentions(arr[i],keys)) for(const j of [i-1,i,i+1]) if(j>=0&&j<arr.length) context.push(arr[j]);
+  }
+  const pool=uniq([...own,...context]);
+  return { pool, own };
+}
+
+function compactIRFMI(s, unit){
+  const raw=buildRawIRFMI(s,keywordSet());
+  const intro=[];
+  const mission=introSummary([...s.mission,...raw.own],unit);
+  if(mission) intro.push(mission);
+
+  const direction=[];
+  const route=routeSummary([...s.execution,...raw.own],unit);
+  if(route) direction.push(route);
+
+  const formation=[];
+  const f=formationSummary([...s.execution,...s.mission,...raw.pool],unit);
+  if(f) formation.push(f);
+
+  const method=[];
+  for(const line of [...s.execution,...s.mission]){
+    if(!mentions(line,keywordSet())) continue;
+    const c=canonicalCommand(line,unit);
+    if(c && !method.includes(c)) method.push(c);
+    if(method.length>=3) break;
+  }
+
+  const final=[];
+  const f1=finalSummary([...s.execution,...s.command],unit);
+  if(f1) final.push(f1);
+  if(!final.some(x=>/Meld/i.test(x))){
+    for(const line of [...s.execution,...s.command]){
+      if(/report.*secure/i.test(line)){ final.push('Meld OBJ SECURE'); break; }
+    }
+  }
+  return {intro:intro.slice(0,2),direction:direction.slice(0,2),formation:formation.slice(0,2),method:method.slice(0,3),final:final.slice(0,2)};
 }
 
 function esc(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
@@ -274,32 +223,21 @@ function block(letter,title,items){const a=uniq(items);return `<section class="o
 async function generate(){
   const text=orderInput.value.trim(); if(!text){status.textContent='Lim inn en ordre først.';orderInput.focus();return;}
   const btn=$('generateBtn'); btn.disabled=true; const old=btn.textContent; btn.textContent='Behandler…';
-  status.textContent=fullTranslate.checked?'Filtrerer ordre og oversetter til norsk…':'Filtrerer ordre…';
+  status.textContent='Filtrerer og komprimerer ordren…';
   try{
-    const s=parseSections(text),keys=keywordSet(),unit=currentUnit();
-    const raw=buildRawIRFMI(s,keys);
-    const [taskT,introT,directionT,formationT,methodT,finalT]=await Promise.all([
-      translateItems(raw.direct),translateItems(raw.intro),translateItems(raw.direction),translateItems(raw.formation),translateItems(raw.method),translateItems(raw.final)
-    ]);
-    const task=compactItems(taskT,'method',unit);
-    const intro=compactItems(introT,'intro',unit);
-    const direction=compactItems(directionT,'direction',unit);
-    const formation=compactItems(formationT,'formation',unit);
-    const method=compactItems(methodT,'method',unit);
-    const final=compactItems(finalT,'final',unit);
-
+    const s=parseSections(text),unit=currentUnit();
+    const o=compactIRFMI(s,unit);
     result.classList.remove('empty');
     result.innerHTML=`<div class="order-title"><h3>${esc(unit)} – IRFMI</h3><p>Kort muntlig minimumsordre</p></div>
-      ${block('I','Innledning',intro)}
-      ${block('R','Retning',direction)}
-      ${block('F','Formasjon / gruppering',formation)}
-      ${block('M','Metode / kort plan',method.length?method:task)}
-      ${block('I','Innbrudd • ildledelse • iverksettelse',final)}
-      <div class="warning"><strong>Kontroller mot originalordren før bruk.</strong> Kortversjonen prioriterer handlinger som påvirker valgt lag.</div>`;
-    status.textContent=fullTranslate.checked?`Ferdig – ${unit} er filtrert og oversatt til norsk.`:`Ferdig – ${unit} er filtrert med lokal terminologi.`;
-  }catch(e){
-    console.error(e); status.textContent='Kunne ikke behandle ordren. Prøv igjen.';
-  }finally{btn.disabled=false;btn.textContent=old;}
+      ${block('I','Innledning',o.intro)}
+      ${block('R','Retning',o.direction)}
+      ${block('F','Formasjon / gruppering',o.formation)}
+      ${block('M','Metode / kort plan',o.method)}
+      ${block('I','Innbrudd • ildledelse • iverksettelse',o.final)}
+      <div class="warning"><strong>Kontroller mot originalordren før bruk.</strong> Kortversjonen prioriterer kun det som påvirker valgt lag.</div>`;
+    status.textContent=`Ferdig – ${unit} er filtrert til kort norsk IRFMI.`;
+  }catch(e){ console.error(e); status.textContent='Kunne ikke behandle ordren. Prøv igjen.'; }
+  finally{btn.disabled=false;btn.textContent=old;}
 }
 
 function toText(){
