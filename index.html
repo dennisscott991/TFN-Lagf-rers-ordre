@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#10140f" />
+  <title>IRFMI – Lagførers minimumsordre</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">MILSIM ORDER TOOL</p>
+      <h1>IRFMI – Lagførers minimumsordre</h1>
+      <p class="subtitle">Lim inn hele 5-punktsordren på engelsk. Appen filtrerer ut det som gjelder laget ditt og gjør det om til en kort norsk minimumsordre.</p>
+    </div>
+    <button id="themeBtn" class="ghost" type="button" aria-label="Bytt tema">☀︎ / ☾</button>
+  </header>
+
+  <main class="grid">
+    <section class="panel input-panel">
+      <div class="panel-head">
+        <div><span class="step">1</span><h2>Full ordre</h2></div>
+        <button id="exampleBtn" class="ghost small" type="button">Eksempel</button>
+      </div>
+
+      <label for="unitName">Velg lag / kallesignal</label>
+      <select id="unitName">
+        <option value="1-Papa">1-Papa</option>
+        <option value="2-Papa">2-Papa</option>
+        <option value="3-Papa">3-Papa</option>
+        <option value="4-Papa" selected>4-Papa</option>
+        <option value="custom">Annet kallesignal…</option>
+      </select>
+
+      <div id="customWrap" class="hidden">
+        <label for="customUnit">Eget lag / kallesignal</label>
+        <input id="customUnit" type="text" placeholder="F.eks. 2-Papa, Ghost 1, Alpha" />
+      </div>
+
+      <label for="roleKeywords">Andre navn appen skal kjenne igjen <span class="muted">(valgfritt)</span></label>
+      <input id="roleKeywords" type="text" placeholder="F.eks. Papa 4, PAPA-4, 4P, Fourth Squad" />
+
+      <label for="orderInput">Lim inn full 5-punktsordre <span class="lang-badge">EN → NO</span></label>
+      <textarea id="orderInput" spellcheck="false" placeholder="1. SITUATION\n...\n\n2. MISSION\n...\n\n3. EXECUTION\n...\n\n4. SUSTAINMENT\n...\n\n5. COMMAND & SIGNAL\n..."></textarea>
+
+      <div class="actions">
+        <button id="generateBtn" class="primary" type="button">Generer IRFMI</button>
+        <button id="clearBtn" class="secondary" type="button">Tøm</button>
+      </div>
+
+      <div class="hint"><strong>Hva appen gjør:</strong> finner direkte oppgaver til valgt lag (1-Papa, 2-Papa, 3-Papa eller 4-Papa), plukker ut retning, formasjon, metode, innbrudd/ild/iverksettelse og oversetter relevante standarduttrykk til norsk.</div>
+    </section>
+
+    <section class="panel output-panel">
+      <div class="panel-head">
+        <div><span class="step">2</span><h2>IRFMI</h2></div>
+        <div class="mini-actions">
+          <button id="copyBtn" class="ghost small" type="button">Kopier IRFMI</button>
+          <button id="printBtn" class="ghost small" type="button">Skriv ut</button>
+        </div>
+      </div>
+
+      <div id="status" class="status">Klar for ordre.</div>
+      <article id="result" class="order-card empty">
+        <div class="placeholder"><div class="crosshair">◎</div><p>IRFMI vises her.</p></div>
+      </article>
+    </section>
+  </main>
+
+  <footer>
+    <span>Alt behandles lokalt i nettleseren – ingen ordre sendes ut av enheten.</span>
+    <span>v2.2</span>
+  </footer>
+  <script src="app.js"></script>
+</body>
+</html>
