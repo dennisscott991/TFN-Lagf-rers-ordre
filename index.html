@@ -12,7 +12,7 @@
     <div>
       <p class="eyebrow">MILSIM ORDER TOOL</p>
       <h1>IRFMI – Lagførers minimumsordre</h1>
-      <p class="subtitle">Lim inn hele 5-punktsordren på engelsk. Appen filtrerer ut det som gjelder laget ditt og gjør det om til en kort norsk minimumsordre.</p>
+      <p class="subtitle">Lim inn hele 5-punktsordren på engelsk. Appen filtrerer ut det som gjelder laget ditt og lager en kort norsk minimumsordre.</p>
     </div>
     <button id="themeBtn" class="ghost" type="button" aria-label="Bytt tema">☀︎ / ☾</button>
   </header>
@@ -44,12 +44,17 @@
       <label for="orderInput">Lim inn full 5-punktsordre <span class="lang-badge">EN → NO</span></label>
       <textarea id="orderInput" spellcheck="false" placeholder="1. SITUATION\n...\n\n2. MISSION\n...\n\n3. EXECUTION\n...\n\n4. SUSTAINMENT\n...\n\n5. COMMAND & SIGNAL\n..."></textarea>
 
+      <label style="display:flex;gap:.65rem;align-items:flex-start;margin-top:1rem;cursor:pointer">
+        <input id="fullTranslate" type="checkbox" checked style="width:auto;margin-top:.2rem" />
+        <span><strong>Full automatisk oversettelse til norsk</strong><br><span class="muted">Sender bare de utvalgte IRFMI-linjene til en ekstern oversettelsestjeneste. Slå av for kun lokal militær terminologi.</span></span>
+      </label>
+
       <div class="actions">
-        <button id="generateBtn" class="primary" type="button">Generer IRFMI</button>
+        <button id="generateBtn" class="primary" type="button">Generer norsk IRFMI</button>
         <button id="clearBtn" class="secondary" type="button">Tøm</button>
       </div>
 
-      <div class="hint"><strong>Hva appen gjør:</strong> finner direkte oppgaver til valgt lag (1-Papa, 2-Papa, 3-Papa eller 4-Papa), plukker ut retning, formasjon, metode, innbrudd/ild/iverksettelse og oversetter relevante standarduttrykk til norsk.</div>
+      <div class="hint"><strong>Hva appen gjør:</strong> finner direkte oppgaver til valgt lag, plukker ut relevant informasjon til IRFMI og oversetter resultatet til norsk. Kallesignal, OBJ/RP/PL, tall og klokkeslett forsøkes beholdt uendret.</div>
     </section>
 
     <section class="panel output-panel">
@@ -69,8 +74,8 @@
   </main>
 
   <footer>
-    <span>Alt behandles lokalt i nettleseren – ingen ordre sendes ut av enheten.</span>
-    <span>v2.2</span>
+    <span>Lokal filtrering. Full oversettelse bruker ekstern oversettelsestjeneste når valget er aktivert.</span>
+    <span>v2.3</span>
   </footer>
   <script src="app.js"></script>
 </body>
