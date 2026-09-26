@@ -99,6 +99,35 @@ function directionWords(s){
   return out;
 }
 
+function norwegianTargets(s){
+  const t=[];
+  // Vanlige milsim/NATO-forkortelser i ordretekst.
+  if(/\b(?:AA|anti[- ]?air|air defen[cs]e)\b/i.test(s)) t.push('luftvern (AA)');
+  if(/\b(?:AS|anti[- ]?ship|anti[- ]?surface)\b/i.test(s)) t.push('sjømålsvåpen (AS)');
+  if(/\bHQ\b/i.test(s)) t.push('HQ');
+  return [...new Set(t)];
+}
+
+function norwegianizeResidual(s){
+  // Brukes kun på korte fragmenter. Engelske helsetninger skal aldri vises som fallback.
+  return String(s||'')
+    .replace(/\bAA\b/gi,'luftvern (AA)')
+    .replace(/\banti[- ]?air\b/gi,'luftvern (AA)')
+    .replace(/\bair defen[cs]e\b/gi,'luftvern (AA)')
+    .replace(/\bAS\b/gi,'sjømålsvåpen (AS)')
+    .replace(/\banti[- ]?ship\b/gi,'sjømålsvåpen (AS)')
+    .replace(/\banti[- ]?surface\b/gi,'sjømålsvåpen (AS)')
+    .replace(/\bsupport\b/gi,'støtt')
+    .replace(/\bfollow\b/gi,'følg')
+    .replace(/\bsecure\b/gi,'sikre')
+    .replace(/\bclear\b/gi,'rydd')
+    .replace(/\battack\b/gi,'angrip')
+    .replace(/\bbreach\b/gi,'bryt inn')
+    .replace(/\bdestroy\b/gi,'bekjemp')
+    .replace(/\breport\b/gi,'meld')
+    .replace(/\s+/g,' ').trim();
+}
+
 function canonicalCommand(line, unit){
   let s=noUnitPrefix(cleanMilitary(line),unit);
   const places=placeTokens(s);
@@ -115,7 +144,7 @@ function canonicalCommand(line, unit){
     [/\b(?:support|supports|supporting)\b/i,()=>`Støtt${places.length?' ved '+places[places.length-1]:''}`],
     [/\b(?:hold|holds|holding)\b/i,()=>`Hold${places.length?' '+places[places.length-1]:''}`],
     [/\b(?:defend|defends|defending)\b/i,()=>`Forsvar${places.length?' '+places[places.length-1]:''}`],
-    [/\b(?:destroy|destroys|destroying)\b/i,()=>`Bekjemp${places.length?' ved '+places[places.length-1]:''}`],
+    [/\b(?:destroy|destroys|destroying)\b/i,()=>{const tg=norwegianTargets(s); return `Bekjemp${tg.length?' '+tg.join(' og '):''}${places.length?' ved '+places[places.length-1]:''}`;}],
     [/\b(?:report|reports|reporting)\b/i,()=>{const m=s.match(/report(?:s|ing)?\s+(.+)/i);return `Meld${m?' '+m[1].trim():''}`;}],
     [/\b(?:establish|establishes|establishing)\b/i,()=>{if(/360/i.test(s))return 'Etabler 360° sikring';return `Etabler${places.length?' ved '+places[places.length-1]:''}`;}],
     [/\b(?:block|blocks|blocking)\b/i,()=>`Blokker${places.length?' '+places[places.length-1]:''}`]
