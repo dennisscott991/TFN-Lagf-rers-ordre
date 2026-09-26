@@ -1,21 +1,20 @@
-# IRFMI – Lagførers minimumsordre v2.9
+# IRFMI – Lagførers minimumsordre v3.1
 
-Denne versjonen bruker helt nye filnavn for JavaScript og CSS for å unngå at GitHub Pages eller nettleseren serverer gammel kode fra cache.
-
-## Viktig i v2.9
-- `app-v2.9.js` brukes i stedet for `app.js`.
-- `style-v2.9.css` brukes i stedet for `style.css`.
-- Ingen engelske originalsetninger kan vises som fallback.
-- Uforståelige linjer utelates i stedet for å vises på engelsk.
+## Nytt i v3.1
+- Alle IRFMI-punkter formuleres som korte norske helsetninger, ikke bare stikkord.
+- Fortsatt svært kort: maks 1 linje Innledning, 1 Retning, 2 Formasjon, 3 Metode og 3 linjer i siste I.
+- Eksempel: `4-Papa følger 3-Papa.` i stedet for `Følg 3-Papa`.
+- Retning skrives som en kort setning, f.eks. `Fremrykk fra RP BRAVO til OLD CASTLE.`
+- Siste I skrives som korte setninger: `Innbruddet skjer ved OLD CASTLE.` / `SBF støtter innbruddet.` / `Iverksett på ordre fra PL.`
+- Ingen engelske originalsetninger brukes som fallback.
 - Støtte for AA = luftvern og AS = sjømålsvåpen / anti-surface.
-- Forstår kombinasjoner som `3/4 Papa` som relevante for både 3-Papa og 4-Papa.
-- Maks 1 linje Innledning, 1 Retning, 2 Formasjon, 3 Metode, 2 Iverksettelse.
+- Forstår kombinasjoner som `3/4 Papa`.
 
 ## GitHub Pages
-Last opp alle fire filene i roten av repositoryet:
+Last opp disse fire filene i roten av repositoryet:
 - `index.html`
-- `app-v2.9.js`
-- `style-v2.9.css`
+- `app-v3.1.js`
+- `style-v3.1.css`
 - `README.md`
 
-De gamle `app.js` og `style.css` kan gjerne slettes etterpå for å unngå forvirring.
+Gamle versjonsfiler kan slettes etter at v3.1 er deployet.
